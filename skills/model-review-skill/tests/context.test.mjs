@@ -11,6 +11,30 @@ test("reports uncovered untracked files", async () => {
   await assert.rejects(() => collectContext({ git }), (error) => error.code === "UNCOVERED_UNTRACKED" && error.coverage.uncovered[0] === "new-file.mjs");
 });
 
+for (const [label, status] of [
+  ["staged", "A  staged.mjs"],
+  ["unstaged", " M unstaged.mjs"],
+  ["untracked", "?? untracked.mjs"],
+]) {
+  test(`branch scope rejects a dirty tree with ${label} changes`, async () => {
+    const git = gitFixture({ "status --porcelain --untracked-files=normal": status });
+    await assert.rejects(
+      () => collectContext({ git, scope: "branch" }),
+      (error) => error.code === "UNCOVERED_WORKTREE" && error.coverage.uncovered.length === 1,
+    );
+  });
+}
+
+test("branch scope reviews committed changes when the tree is clean", async () => {
+  const git = gitFixture({
+    "status --porcelain --untracked-files=normal": "",
+    "diff --name-only main...HEAD": "src/change.mjs",
+    "diff --no-ext-diff main...HEAD": "diff --git a/src/change.mjs b/src/change.mjs",
+  });
+  const result = await collectContext({ git, scope: "branch", base: "main" });
+  assert.deepEqual(result.coverage.included, ["src/change.mjs"]);
+});
+
 test("includes opted-in untracked files and records truncation", async () => {
   const git = gitFixture({ "ls-files --others --exclude-standard": "new-file.mjs" });
   const result = await collectContext({ git, includeUntracked: true, maxChars: 10, read: async () => "export default 1;" });

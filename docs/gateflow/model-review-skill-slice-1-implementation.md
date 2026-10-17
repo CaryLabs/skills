@@ -9,4 +9,3 @@
 - **Docs decision**: detailed end-user references remain Slice 2; this slice only implements the approved core
 - **Residual risks**: provider protocols and final Skill instructions are covered by approved Slice 2
 - **Completion status**: implementation complete; pending Slice 1 code review
-

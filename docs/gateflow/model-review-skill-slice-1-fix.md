@@ -6,4 +6,3 @@
 - **Validation**: offline suite → 13 passed, 0 failed
 - **Residual risks**: provider protocols remain covered by approved Slice 2
 - **Completion status**: fixes complete; re-review passed in `docs/reviews/code-re-review-20261017-231544.md`
-

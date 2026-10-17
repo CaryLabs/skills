@@ -6,4 +6,3 @@
 - **Validation**: Node suite → 24 passed; Skill Creator validator → valid
 - **Residual risks**: live endpoint/account behavior remains explicitly untested
 - **Completion status**: fix complete; re-review passed in `docs/reviews/code-re-review-20261017-232322.md`
-

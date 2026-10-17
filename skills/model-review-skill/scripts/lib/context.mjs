@@ -49,6 +49,14 @@ export async function collectContext({
   const excluded = [];
 
   if (scope === "branch") {
+    const dirty = git(["status", "--porcelain", "--untracked-files=normal"], cwd);
+    if (dirty.trim()) {
+      const paths = lines(dirty).map((entry) => entry.slice(3).trim()).filter(Boolean);
+      const error = new Error(`branch scope requires a clean working tree; uncovered paths: ${paths.join(", ")}`);
+      error.code = "UNCOVERED_WORKTREE";
+      error.coverage = { included: [], excluded: [], uncovered: paths, truncated: false };
+      throw error;
+    }
     included = lines(git(["diff", "--name-only", `${base}...HEAD`], cwd));
     text = git(["diff", "--no-ext-diff", `${base}...HEAD`], cwd);
   } else if (scope === "working-tree") {

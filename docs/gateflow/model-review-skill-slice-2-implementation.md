@@ -9,4 +9,3 @@
 - **Docs decision**: configuration and extension guidance live inside the Skill; repository README only lists the Skill
 - **Residual risks**: live accounts/endpoints remain untested by approved scope
 - **Completion status**: implementation complete; pending Slice 2 code review
-
