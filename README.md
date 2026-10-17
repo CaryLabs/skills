@@ -8,3 +8,5 @@ Reusable Codex skills maintained by CaryLabs.
   read-only engineering reviews from configurable DeepSeek, Claude, or Gemini
   models. Copy the skill directory into your Codex skills directory, then create
   the documented local configuration in the repository being reviewed.
+
+  - [中文用户手册（零开发基础版）](docs/model-review-skill-user-guide.zh-CN.md)
