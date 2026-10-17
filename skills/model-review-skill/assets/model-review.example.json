@@ -1,0 +1,42 @@
+{
+  "defaultProvider": "claude",
+  "baseBranch": "main",
+  "includeUntracked": false,
+  "limits": {
+    "maxContextChars": 120000,
+    "timeoutMs": 60000
+  },
+  "providers": {
+    "deepseek": {
+      "type": "deepseek",
+      "baseUrl": "https://api.deepseek.com",
+      "apiKey": "replace-locally",
+      "model": "replace-with-an-available-model"
+    },
+    "claude": {
+      "type": "claude",
+      "baseUrl": "https://api.anthropic.com/v1",
+      "apiKey": "replace-locally",
+      "model": "replace-with-an-available-model",
+      "apiVersion": "2023-06-01",
+      "maxTokens": 4096
+    },
+    "gemini": {
+      "type": "gemini",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta",
+      "apiKey": "replace-locally",
+      "model": "replace-with-an-available-model"
+    },
+    "compatible-provider": {
+      "type": "openai-compatible",
+      "baseUrl": "https://provider.example/v1",
+      "apiKey": "replace-locally",
+      "model": "replace-with-an-available-model",
+      "auth": {
+        "type": "bearer"
+      },
+      "endpointPath": "/chat/completions",
+      "jsonMode": false
+    }
+  }
+}

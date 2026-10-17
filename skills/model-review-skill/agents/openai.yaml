@@ -1,0 +1,4 @@
+interface:
+  display_name: "Model Review"
+  short_description: "Get structured reviews from configurable external models"
+  default_prompt: "Use $model-review-skill to review the current branch with the configured provider."
