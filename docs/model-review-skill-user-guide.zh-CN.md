@@ -11,7 +11,7 @@
 - 架构审查：检查系统设计、模块边界和长期维护风险；
 - Bug 诊断：让外部模型协助分析故障原因和排查方向；
 - 测试设计：补充应当测试的场景、边界条件和失败路径；
-- 多模型对比：让 DeepSeek、Claude、Gemini 分别给出意见，再由 Codex 核对和汇总。
+- 多模型对比：让不同厂商或本地模型分别给出意见，再由 Codex 核对和汇总。
 
 外部模型只有“阅读并提出建议”的权限，不能操作你的电脑、运行命令或修改文件。Codex 也不会因为外部模型提出了建议就自动改代码；是否修改以及如何修改，仍由你和 Codex 决定。
 
@@ -21,7 +21,7 @@
 
 1. 已经可以正常使用的 Codex；
 2. 一个需要检查的项目文件夹；
-3. 至少一个模型平台的 API Key，例如 DeepSeek、Claude 或 Gemini；
+3. 至少一个模型平台的 API Key，例如 DeepSeek、Claude、Gemini、OpenAI 或其他兼容平台；本地无认证模型可以不需要 Key；
 4. 对应平台可用的模型名称和可用余额。
 
 API Key 可以理解为模型平台发给你的“专用密码”。调用外部模型通常会产生费用，费用由模型平台收取，与本项目无关。请先在平台控制台查看价格、额度和数据政策。
@@ -32,7 +32,7 @@ API Key 可以理解为模型平台发给你的“专用密码”。调用外部
 - [Anthropic Console（Claude）](https://console.anthropic.com/)
 - [Google AI Studio（Gemini）](https://aistudio.google.com/)
 
-只需要选择一个平台，不必同时注册三个。
+只需要选择一个平台，不必同时注册多个。除 Claude、Gemini 的原生接口外，Skill 还支持采用 OpenAI Chat Completions 兼容接口的云平台和本地模型服务。
 
 ## 3. 安装 Skill
 
@@ -179,6 +179,43 @@ Gemini 示例：
 }
 ```
 
+其他厂商或本地模型示例：
+
+```json
+{
+  "defaultProvider": "my-provider",
+  "baseBranch": "main",
+  "includeUntracked": false,
+  "limits": {
+    "maxContextChars": 120000,
+    "timeoutMs": 60000
+  },
+  "providers": {
+    "my-provider": {
+      "type": "openai-compatible",
+      "baseUrl": "从厂商文档复制兼容接口地址",
+      "apiKey": "在这里粘贴你的API Key",
+      "model": "从厂商控制台复制模型名称"
+    }
+  }
+}
+```
+
+这个通用类型可以用于 OpenAI、Azure OpenAI、OpenRouter、Groq、Mistral、xAI，以及提供兼容接口的通义千问、Moonshot 等平台。具体兼容性以厂商当前文档为准，不要根据名称猜测接口地址。
+
+Ollama、LM Studio、vLLM 等本地服务如果开放了兼容接口，可以使用无认证配置：
+
+```json
+{
+  "type": "openai-compatible",
+  "baseUrl": "http://localhost:11434/v1",
+  "model": "本地模型名称",
+  "auth": { "type": "none" }
+}
+```
+
+如果厂商要求 `api-key` 请求头、自定义路径或额外参数，让 Codex 根据该厂商官方文档设置 `auth`、`endpointPath`、`headers` 和 `extraBody`。不要把 API Key 直接写进 URL。
+
 不要照抄某篇旧教程中的模型名称。模型可能升级、下线或因账户而异，应从平台控制台或官方文档复制当前可用的模型名称。
 
 ### 第三步：保存配置并做安全检查
@@ -205,7 +242,7 @@ Gemini 示例：
 使用 $model-review-skill，让 DeepSeek 审查当前未提交的代码。调用前先告诉我会发送哪些文件，得到结果后请你逐条核实，不要自动修改代码。
 ```
 
-如果配置的是 Claude 或 Gemini，把模型名称替换掉即可。
+如果配置的是其他云端或本地模型，把示例中的模型名称替换掉即可。
 
 正常流程如下：
 
@@ -346,7 +383,15 @@ Skill 有三种常见输入方式：
 
 ### 增加全新的模型平台
 
-如果新模型来自当前不支持的平台，仅修改配置还不够，需要编写一个新的 provider adapter。请让开发人员或 Codex 按以下文档扩展：
+先查看新平台是否提供 OpenAI-compatible 或 OpenAI Chat Completions 兼容接口。如果提供，只需新增一个 `type: "openai-compatible"` 的配置，不需要修改 Skill 代码。
+
+可以直接告诉 Codex：
+
+```text
+请根据这个模型厂商的官方 API 文档，为 model-review-skill 新增一个 openai-compatible provider 配置。不要读取或输出其他 provider 的 API Key；配置后只做格式与安全检查，不要立即产生付费调用。
+```
+
+如果厂商使用完全不同的请求和响应协议，才需要编写新的 provider adapter。请让开发人员或 Codex 按以下文档扩展：
 
 ```text
 skills/model-review-skill/references/provider-extension.md

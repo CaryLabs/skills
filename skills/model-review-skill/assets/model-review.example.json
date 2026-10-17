@@ -26,6 +26,17 @@
       "baseUrl": "https://generativelanguage.googleapis.com/v1beta",
       "apiKey": "replace-locally",
       "model": "replace-with-an-available-model"
+    },
+    "compatible-provider": {
+      "type": "openai-compatible",
+      "baseUrl": "https://provider.example/v1",
+      "apiKey": "replace-locally",
+      "model": "replace-with-an-available-model",
+      "auth": {
+        "type": "bearer"
+      },
+      "endpointPath": "/chat/completions",
+      "jsonMode": false
     }
   }
 }

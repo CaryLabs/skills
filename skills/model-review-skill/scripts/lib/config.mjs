@@ -13,6 +13,15 @@ function requireString(value, label) {
   return value.trim();
 }
 
+function requireStringMap(value, label) {
+  if (value === undefined) return;
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error(`${label} must be an object`);
+  for (const [key, item] of Object.entries(value)) {
+    requireString(key, `${label} key`);
+    requireString(item, `${label}.${key}`);
+  }
+}
+
 export function validateConfig(config) {
   if (!config || typeof config !== "object" || Array.isArray(config)) throw new Error("config must be a JSON object");
   const providers = config.providers;
@@ -22,10 +31,28 @@ export function validateConfig(config) {
 
   for (const [name, provider] of Object.entries(providers)) {
     if (!provider || typeof provider !== "object" || Array.isArray(provider)) throw new Error(`provider '${name}' must be an object`);
-    requireString(provider.type ?? name, `provider '${name}'.type`);
+    const type = requireString(provider.type ?? name, `provider '${name}'.type`);
     requireString(provider.baseUrl, `provider '${name}'.baseUrl`);
-    requireString(provider.apiKey, `provider '${name}'.apiKey`);
     requireString(provider.model, `provider '${name}'.model`);
+    const authType = provider.auth?.type ?? "bearer";
+    if (provider.auth !== undefined && (!provider.auth || typeof provider.auth !== "object" || Array.isArray(provider.auth))) {
+      throw new Error(`provider '${name}'.auth must be an object`);
+    }
+    if (!["bearer", "api-key", "none"].includes(authType)) throw new Error(`provider '${name}'.auth.type is invalid`);
+    if (authType !== "none") requireString(provider.apiKey, `provider '${name}'.apiKey`);
+    if (provider.auth?.header !== undefined) requireString(provider.auth.header, `provider '${name}'.auth.header`);
+    if (provider.auth?.prefix !== undefined && typeof provider.auth.prefix !== "string") throw new Error(`provider '${name}'.auth.prefix must be a string`);
+    requireStringMap(provider.headers, `provider '${name}'.headers`);
+    if (provider.extraBody !== undefined && (!provider.extraBody || typeof provider.extraBody !== "object" || Array.isArray(provider.extraBody))) {
+      throw new Error(`provider '${name}'.extraBody must be an object`);
+    }
+    for (const field of ["endpointPath", "responsePath", "usagePath"]) {
+      if (provider[field] !== undefined) requireString(provider[field], `provider '${name}'.${field}`);
+    }
+    if (provider.jsonMode !== undefined && typeof provider.jsonMode !== "boolean") throw new Error(`provider '${name}'.jsonMode must be a boolean`);
+    if (type !== "openai-compatible" && type !== "openai" && authType === "none") {
+      throw new Error(`provider '${name}' only supports auth.type 'none' with an OpenAI-compatible provider`);
+    }
   }
 
   const limits = config.limits ?? {};

@@ -1,5 +1,10 @@
 # Adding a Provider
 
+First check whether the vendor supports an OpenAI-compatible Chat Completions
+endpoint. If it does, configure `type: "openai-compatible"`; no code change is
+needed. Add a native adapter only for an incompatible protocol or when native
+semantics are required.
+
 Add one module under `scripts/lib/providers/` and register it in `index.mjs`.
 The module exports `type` and `review(request, runtime)`.
 

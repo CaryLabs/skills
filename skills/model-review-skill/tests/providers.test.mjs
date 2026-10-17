@@ -3,6 +3,7 @@ import test from "node:test";
 import * as claude from "../scripts/lib/providers/claude.mjs";
 import * as deepseek from "../scripts/lib/providers/deepseek.mjs";
 import * as gemini from "../scripts/lib/providers/gemini.mjs";
+import * as openaiCompatible from "../scripts/lib/providers/openai-compatible.mjs";
 import { postJson } from "../scripts/lib/providers/http.mjs";
 
 const messages = { instruction: "trusted rubric", context: "untrusted code" };
@@ -76,6 +77,75 @@ test("Gemini keeps trusted and untrusted payloads separate", async () => {
   assert.equal(result.usage.totalTokenCount, 2);
 });
 
+test("OpenAI-compatible supports bearer auth and configurable request fields", async () => {
+  let call;
+  const result = await openaiCompatible.review({
+    config: {
+      baseUrl: "https://api.example/v1/",
+      apiKey: "key",
+      model: "model",
+      jsonMode: true,
+      headers: { "x-client": "model-review" },
+      extraBody: { temperature: 0 },
+    },
+    messages,
+    timeoutMs: 1000,
+  }, {
+    fetch: async (url, options) => {
+      call = { url, options, body: JSON.parse(options.body) };
+      return response({ choices: [{ message: { content: '{"summary":"ok","items":[]}' } }], usage: { total_tokens: 2 } });
+    },
+  });
+  assert.equal(call.url, "https://api.example/v1/chat/completions");
+  assert.equal(call.options.headers.authorization, "Bearer key");
+  assert.equal(call.options.headers["x-client"], "model-review");
+  assert.equal(call.body.temperature, 0);
+  assert.deepEqual(call.body.messages.map((item) => item.role), ["system", "user"]);
+  assert.deepEqual(call.body.response_format, { type: "json_object" });
+  assert.equal(result.usage.total_tokens, 2);
+});
+
+test("OpenAI-compatible supports API-key auth and custom paths", async () => {
+  let call;
+  const result = await openaiCompatible.review({
+    config: {
+      baseUrl: "https://azure.example/openai/deployments/reviewer",
+      apiKey: "key",
+      model: "deployment-model",
+      endpointPath: "/chat/completions?api-version=2026-01-01",
+      auth: { type: "api-key", header: "api-key" },
+      responsePath: "result.0.text",
+      usagePath: "metrics",
+    },
+    messages,
+    timeoutMs: 1000,
+  }, {
+    fetch: async (url, options) => {
+      call = { url, options };
+      return response({ result: [{ text: '{"summary":"ok","items":[]}' }], metrics: { tokens: 3 } });
+    },
+  });
+  assert.match(call.url, /chat\/completions\?api-version=2026-01-01$/);
+  assert.equal(call.options.headers["api-key"], "key");
+  assert.equal(result.usage.tokens, 3);
+});
+
+test("OpenAI-compatible supports unauthenticated local endpoints and content arrays", async () => {
+  let call;
+  const result = await openaiCompatible.review({
+    config: { baseUrl: "http://localhost:11434/v1", model: "local", auth: { type: "none" } },
+    messages,
+    timeoutMs: 1000,
+  }, {
+    fetch: async (_url, options) => {
+      call = options;
+      return response({ choices: [{ message: { content: [{ type: "text", text: '{"summary":"ok","items":[]}' }] } }] });
+    },
+  });
+  assert.equal("authorization" in call.headers, false);
+  assert.match(result.text, /summary/);
+});
+
 test("HTTP errors are bounded and malformed JSON fails", async () => {
   await assert.rejects(
     () => postJson({ url: "https://example.test", headers: {}, body: {}, timeoutMs: 1000 }, { fetch: async () => response("x".repeat(1000), 429) }),
@@ -101,4 +171,5 @@ test("all adapters reject empty content", async () => {
   await assert.rejects(() => deepseek.review({ config: { baseUrl: "https://x", apiKey: "k", model: "m" }, messages, timeoutMs: 1000 }, { fetch: async () => response({ choices: [] }) }), /empty content/);
   await assert.rejects(() => claude.review({ config: { baseUrl: "https://x", apiKey: "k", model: "m" }, messages, timeoutMs: 1000 }, { fetch: async () => response({ content: [] }) }), /empty content/);
   await assert.rejects(() => gemini.review({ config: { baseUrl: "https://x", apiKey: "k", model: "m" }, messages, timeoutMs: 1000 }, { fetch: async () => response({ candidates: [] }) }), /empty content/);
+  await assert.rejects(() => openaiCompatible.review({ config: { baseUrl: "https://x", apiKey: "k", model: "m" }, messages, timeoutMs: 1000 }, { fetch: async () => response({ choices: [] }) }), /empty content/);
 });

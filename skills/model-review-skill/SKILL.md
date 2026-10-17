@@ -1,6 +1,6 @@
 ---
 name: model-review-skill
-description: "Get structured, read-only second opinions from configured external models for code, plans, architecture, bug diagnosis, or test design. Use when the user explicitly asks for an external-model review or multi-model comparison; do not use for ordinary Codex review or general chat."
+description: "Get structured, read-only second opinions from configurable cloud or local models for code, plans, architecture, bug diagnosis, or test design. Supports native Claude and Gemini APIs plus OpenAI-compatible providers. Use when the user explicitly asks for an external-model review or multi-model comparison; do not use for ordinary Codex review or general chat."
 ---
 
 # Model Review Skill
@@ -52,5 +52,7 @@ and adjudication.
   rely on OS filesystem security.
 
 To add a new vendor adapter, read
-[provider-extension.md](references/provider-extension.md). Read only the selected
+[provider-extension.md](references/provider-extension.md) only when its API is not
+OpenAI-compatible. For provider configuration, read
+[configuration.md](references/configuration.md). Read only the selected
 profile under `references/profiles/` when its detailed rubric is needed.
